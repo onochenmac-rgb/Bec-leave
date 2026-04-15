@@ -814,9 +814,20 @@ window.saveConfig = async () => {
     }
 };
 
+// ── Hardcoded Firebase Config ──────────────────────────
+const HARDCODED_CONFIG = {
+    apiKey: "AIzaSyBGvf5n6obBcB4dVikFH6XJJiCSYjiwOvU",
+    authDomain: "bec-leave.firebaseapp.com",
+    databaseURL: "https://bec-leave-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "bec-leave",
+    storageBucket: "bec-leave.firebasestorage.app",
+    messagingSenderId: "192721312667",
+    appId: "1:192721312667:web:b85d4f5c2b5006a0e79f3e",
+};
+
 // ── Entry ──────────────────────────────────────────────
-loadConfig().then(cfg => {
-    if (cfg) startPublicView();
+initFirebase(HARDCODED_CONFIG).then(ok => {
+    if (ok) startPublicView();
     else renderConfig();
 });
 </script>
