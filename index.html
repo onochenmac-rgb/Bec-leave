@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>休假看板</title>
+    <style>
+        :root {
+            --bg: #F5F5F7;
+            --surface: #FFFFFF;
+            --text: #1D1D1F;
+            --text-secondary: #6E6E73;
+            --accent: #0071E3;
+            --border: rgba(0,0,0,0.08);
+            --shadow: 0 2px 20px rgba(0,0,0,0.06);
+            --radius: 18px;
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 20px 48px;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            padding: 56px 0 40px;
+            cursor: default;
+            user-select: none;
+        }
+        .header-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .header-month {
+            font-size: 52px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+        .header-year {
+            font-size: 17px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* ── Summary ── */
+        .summary {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 18px 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .summary-label { font-size: 15px; color: var(--text-secondary); }
+        .summary-value { font-size: 24px; font-weight: 700; }
+        .summary-unit { font-size: 15px; font-weight: 400; color: var(--text-secondary); margin-left: 2px; }
+
+        /* ── Leave cards ── */
+        .leaves-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .leave-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .leave-date-block { text-align: center; min-width: 60px; }
+        .leave-day {
+            font-size: 52px;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }
+        .leave-weekday {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        .leave-divider {
+            width: 1px;
+            height: 56px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+        .leave-info { flex: 1; }
+        .leave-type {
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .leave-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .leave-period { font-size: 15px; color: var(--text-secondary); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-icon { font-size: 56px; margin-bottom: 16px; }
+        .empty-text { font-size: 17px; }
+
+        /* ── PIN Overlay ── */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        .overlay-card {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 36px 28px 28px;
+            width: calc(100% - 48px);
+            max-width: 340px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+        }
+        .overlay-title {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-bottom: 36px;
+        }
+        .pin-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #D1D1D6;
+            transition: background 0.15s ease;
+        }
+        .pin-dot.filled { background: var(--accent); }
+        .pin-dot.error { background: #FF3B30; }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .num-btn {
+            background: #F5F5F7;
+            border: none;
+            border-radius: 14px;
+            height: 68px;
+            font-family: var(--font);
+            font-size: 26px;
+            font-weight: 400;
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.1s ease, transform 0.08s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .num-btn:active { background: #D1D1D6; transform: scale(0.95); }
+        .num-btn.del { font-size: 20px; color: var(--text-secondary); }
+        .num-btn.empty { background: transparent; pointer-events: none; }
+
+        /* ── Admin Panel ── */
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 52px 0 32px;
+        }
+        .admin-title { font-size: 32px; font-weight: 700; }
+        .btn-logout {
+            background: none;
+            border: none;
+            font-family: var(--font);
+            font-size: 15px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .month-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .month-nav-btn {
+            background: var(--surface);
+            border: none;
+            border-radius: 12px;
+            width: 44px;
+            height: 44px;
+            font-size: 22px;
+            color: var(--text);
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .month-nav-label { font-size: 17px; font-weight: 600; }
+
+        .form-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+        .form-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; display: block; }
+
+        .form-input, .form-select {
+            width: 100%;
+            height: 48px;
+            background: #F5F5F7;
+            border: none;
+            border-radius: 12px;
+            padding: 0 16px;
+            font-family: var(--font);
+            font-size: 16px;
+            color: var(--text);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .btn-add {
+            width: 100%;
+            height: 52px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-family: var(--font);
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: opacity 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-add:active { opacity: 0.8; }
+
+        .admin-leave-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .admin-leave-item:last-child { border-bottom: none; }
+        .admin-leave-date { font-size: 15px; font-weight: 600; }
+        .admin-leave-detail { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #FF3B30;
+            font-family: var(--font);
+            font-size: 15px;
+            cursor: pointer;
+            padding: 8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ── Config Screen ── */
+        .config-screen {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 56px 20px 48px;
+        }
+        .config-title { font-size: 32px; font-weight: 700; margin-bottom: 10px; }
+        .config-desc { color: var(--text-secondary); font-size: 15px; line-height: 1.6; margin-bottom: 32px; }
+        .config-step {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
+        .config-step-num {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .config-step-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .config-step-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+        .config-divider { height: 1px; background: var(--border); margin: 24px 0; }
+        .config-input-group { margin-bottom: 14px; }
+        .config-label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+        .config-input {
+            width: 100%;
+            height: 48px;
+            background: var(--surface);
+            border: none;
+            border-radius: 12px;
+            padding: 0 16px;
+            font-family: var(--font);
+            font-size: 15px;
+            color: var(--text);
+            box-shadow: var(--shadow);
+            outline: none;
+        }
+        .btn-config-save {
+            width: 100%;
+            height: 52px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-family: var(--font);
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.15s ease;
+        }
+        .btn-config-save:active { opacity: 0.8; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            background: #1D1D1F;
+            color: white;
+            padding: 13px 28px;
+            border-radius: 100px;
+            font-size: 15px;
+            z-index: 200;
+            white-space: nowrap;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- PIN Overlay -->
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-title">管理員登入</div>
+        <div class="pin-dots">
+            <div class="pin-dot" id="dot-0"></div>
+            <div class="pin-dot" id="dot-1"></div>
+            <div class="pin-dot" id="dot-2"></div>
+            <div class="pin-dot" id="dot-3"></div>
+        </div>
+        <div class="numpad">
+            <button class="num-btn" onclick="numpadInput('1')">1</button>
+            <button class="num-btn" onclick="numpadInput('2')">2</button>
+            <button class="num-btn" onclick="numpadInput('3')">3</button>
+            <button class="num-btn" onclick="numpadInput('4')">4</button>
+            <button class="num-btn" onclick="numpadInput('5')">5</button>
+            <button class="num-btn" onclick="numpadInput('6')">6</button>
+            <button class="num-btn" onclick="numpadInput('7')">7</button>
+            <button class="num-btn" onclick="numpadInput('8')">8</button>
+            <button class="num-btn" onclick="numpadInput('9')">9</button>
+            <button class="num-btn empty"></button>
+            <button class="num-btn" onclick="numpadInput('0')">0</button>
+            <button class="num-btn del" onclick="numpadDelete()">⌫</button>
+        </div>
+    </div>
+</div>
+
+<div id="app"></div>
+
+<script type="module">
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, push, remove, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── Constants ──────────────────────────────────────────
+const ADMIN_PASSWORD = '0000';
+const CONFIG_KEY = 'leave_board_config';
+const MONTHS_ZH = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+const WEEKDAYS = ['日','一','二','三','四','五','六'];
+const TYPE_COLORS = { '特休': '#0071E3', '病假': '#FF3B30', '事假': '#FF9500', '補休': '#34C759', '婚假': '#AF52DE', '喪假': '#636366' };
+
+// ── State ──────────────────────────────────────────────
+let db = null;
+let isAdmin = false;
+let pin = '';
+let adminYear = new Date().getFullYear();
+let adminMonth = new Date().getMonth() + 1;
+let unsubscribe = null;
+
+// ── Helpers ────────────────────────────────────────────
+function typeColor(type) { return TYPE_COLORS[type] || '#8E8E93'; }
+
+function parseDate(str) {
+    const d = new Date(str + 'T00:00:00');
+    return { day: d.getDate(), weekday: WEEKDAYS[d.getDay()], month: d.getMonth() + 1, year: d.getFullYear() };
+}
+
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── Firebase ───────────────────────────────────────────
+function initFirebase(config) {
+    try {
+        const existing = getApps().find(a => a.name === 'leave-board');
+        const app = existing || initializeApp(config, 'leave-board');
+        db = getDatabase(app);
+        return true;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
+function loadConfig() {
+    try {
+        const raw = localStorage.getItem(CONFIG_KEY);
+        if (!raw) return null;
+        const cfg = JSON.parse(raw);
+        return initFirebase(cfg) ? cfg : null;
+    } catch (e) { return null; }
+}
+
+// ── PIN ────────────────────────────────────────────────
+window.numpadInput = (n) => {
+    if (pin.length >= 4) return;
+    pin += n;
+    updateDots();
+    if (pin.length === 4) checkPin();
+};
+
+window.numpadDelete = () => {
+    pin = pin.slice(0, -1);
+    updateDots();
+};
+
+function updateDots(state = '') {
+    for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById('dot-' + i);
+        dot.className = 'pin-dot' + (state === 'error' ? ' error' : i < pin.length ? ' filled' : '');
+    }
+}
+
+function checkPin() {
+    if (pin === ADMIN_PASSWORD) {
+        document.getElementById('overlay').classList.remove('active');
+        isAdmin = true;
+        pin = '';
+        updateDots();
+        if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+        renderAdmin();
+    } else {
+        updateDots('error');
+        setTimeout(() => { pin = ''; updateDots(); }, 600);
+    }
+}
+
+function showOverlay() {
+    pin = ''; updateDots();
+    document.getElementById('overlay').classList.add('active');
+}
+
+// ── Public View ────────────────────────────────────────
+function startPublicView() {
+    isAdmin = false;
+    const leavesRef = ref(db, 'leaves');
+    const unsub = onValue(leavesRef, snap => {
+        renderPublicUI(snap.val() || {});
+    });
+    unsubscribe = unsub;
+
+    let clicks = 0, timer;
+    document.getElementById('app').addEventListener('click', e => {
+        if (!e.target.closest('.header')) return;
+        clicks++;
+        clearTimeout(timer);
+        timer = setTimeout(() => { clicks = 0; }, 500);
+        if (clicks >= 3) { clicks = 0; showOverlay(); }
+    });
+}
+
+function renderPublicUI(allLeaves) {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth() + 1;
+
+    const entries = Object.entries(allLeaves)
+        .filter(([, l]) => { const p = parseDate(l.date); return p.year === y && p.month === m; })
+        .sort(([, a], [, b]) => a.date.localeCompare(b.date));
+
+    const totalDays = entries.reduce((s, [, l]) => s + (l.period === '全天' ? 1 : 0.5), 0);
+
+    let html = `
+        <div class="container">
+            <div class="header">
+                <div class="header-name">小野的休假</div>
+                <div class="header-month">${MONTHS_ZH[m - 1]}</div>
+                <div class="header-year">${y}</div>
+            </div>
+    `;
+
+    if (entries.length > 0) {
+        html += `
+            <div class="summary">
+                <span class="summary-label">本月休假天數</span>
+                <span class="summary-value">${totalDays}<span class="summary-unit"> 天</span></span>
+            </div>
+            <div class="leaves-list">
+        `;
+        for (const [, l] of entries) {
+            const { day, weekday } = parseDate(l.date);
+            html += `
+                <div class="leave-card">
+                    <div class="leave-date-block">
+                        <div class="leave-day">${day}</div>
+                        <div class="leave-weekday">週${weekday}</div>
+                    </div>
+                    <div class="leave-divider"></div>
+                    <div class="leave-info">
+                        <div class="leave-type">
+                            <span class="leave-dot" style="background:${typeColor(l.type)}"></span>${l.type}
+                        </div>
+                        <div class="leave-period">${l.period}</div>
+                    </div>
+                </div>
+            `;
+        }
+        html += `</div>`;
+    } else {
+        html += `<div class="empty-state"><div class="empty-icon">🗓</div><div class="empty-text">本月無排定休假</div></div>`;
+    }
+
+    html += `</div>`;
+    document.getElementById('app').innerHTML = html;
+}
+
+// ── Admin View ─────────────────────────────────────────
+async function renderAdmin() {
+    const snap = await get(ref(db, 'leaves'));
+    const all = snap.val() || {};
+
+    const entries = Object.entries(all)
+        .filter(([, l]) => { const p = parseDate(l.date); return p.year === adminYear && p.month === adminMonth; })
+        .sort(([, a], [, b]) => a.date.localeCompare(b.date));
+
+    const today = `${adminYear}-${String(adminMonth).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+
+    let listHtml = '';
+    if (entries.length > 0) {
+        listHtml = `
+            <div class="form-card">
+                <div class="form-title">本月記錄</div>
+                ${entries.map(([id, l]) => {
+                    const { day, weekday } = parseDate(l.date);
+                    return `
+                        <div class="admin-leave-item">
+                            <div>
+                                <div class="admin-leave-date">${adminMonth}月${day}日（週${weekday}）</div>
+                                <div class="admin-leave-detail">${l.type} · ${l.period}</div>
+                            </div>
+                            <button class="btn-delete" onclick="window.deleteLeave('${id}')">刪除</button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    document.getElementById('app').innerHTML = `
+        <div class="container">
+            <div class="admin-header">
+                <div class="admin-title">管理休假</div>
+                <button class="btn-logout" onclick="window.adminLogout()">登出</button>
+            </div>
+
+            <div class="month-nav">
+                <button class="month-nav-btn" onclick="window.changeMonth(-1)">‹</button>
+                <div class="month-nav-label">${adminYear} · ${MONTHS_ZH[adminMonth - 1]}</div>
+                <button class="month-nav-btn" onclick="window.changeMonth(1)">›</button>
+            </div>
+
+            <div class="form-card">
+                <div class="form-title">新增休假</div>
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-input" id="input-date" value="${today}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">假別</label>
+                    <select class="form-select" id="input-type">
+                        <option>特休</option>
+                        <option>病假</option>
+                        <option>事假</option>
+                        <option>補休</option>
+                        <option>婚假</option>
+                        <option>喪假</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">時段</label>
+                    <select class="form-select" id="input-period">
+                        <option>全天</option>
+                        <option>上午</option>
+                        <option>下午</option>
+                    </select>
+                </div>
+                <button class="btn-add" onclick="window.addLeave()">新增</button>
+            </div>
+
+            ${listHtml}
+        </div>
+    `;
+}
+
+window.addLeave = async () => {
+    const date = document.getElementById('input-date').value;
+    const type = document.getElementById('input-type').value;
+    const period = document.getElementById('input-period').value;
+    if (!date) { toast('請選擇日期'); return; }
+    await push(ref(db, 'leaves'), { date, type, period });
+    toast('已新增');
+    renderAdmin();
+};
+
+window.deleteLeave = async (id) => {
+    await remove(ref(db, 'leaves/' + id));
+    toast('已刪除');
+    renderAdmin();
+};
+
+window.adminLogout = () => { startPublicView(); };
+
+window.changeMonth = (d) => {
+    adminMonth += d;
+    if (adminMonth > 12) { adminMonth = 1; adminYear++; }
+    if (adminMonth < 1) { adminMonth = 12; adminYear--; }
+    renderAdmin();
+};
+
+// ── Config Screen ──────────────────────────────────────
+function renderConfig() {
+    document.getElementById('app').innerHTML = `
+        <div class="config-screen">
+            <div class="config-title">初次設定</div>
+            <div class="config-desc">需要連接 Firebase 才能讓老闆即時看到更新。只要做一次，5 分鐘完成。</div>
+
+            <div class="config-step">
+                <div class="config-step-num">步驟 1</div>
+                <div class="config-step-title">前往 Firebase Console</div>
+                <div class="config-step-desc">開啟 console.firebase.google.com → 建立專案 → 新增 Realtime Database（選 Asia-Southeast1）→ 測試模式</div>
+            </div>
+            <div class="config-step">
+                <div class="config-step-num">步驟 2</div>
+                <div class="config-step-title">取得設定資料</div>
+                <div class="config-step-desc">專案設定 → 一般設定 → 往下滑 → 「新增應用程式」選網頁 → 複製 firebaseConfig 裡的值</div>
+            </div>
+            <div class="config-step">
+                <div class="config-step-num">步驟 3</div>
+                <div class="config-step-title">貼入下方並儲存</div>
+                <div class="config-step-desc">完成後此頁面只需設定一次，之後每次開啟都會自動連線。</div>
+            </div>
+
+            <div class="config-divider"></div>
+
+            <div class="config-input-group">
+                <label class="config-label">API Key</label>
+                <input class="config-input" id="cfg-apiKey" placeholder="AIzaSy...">
+            </div>
+            <div class="config-input-group">
+                <label class="config-label">Project ID</label>
+                <input class="config-input" id="cfg-projectId" placeholder="my-project-id">
+            </div>
+            <div class="config-input-group">
+                <label class="config-label">Database URL</label>
+                <input class="config-input" id="cfg-databaseURL" placeholder="https://my-project-default-rtdb...firebasedatabase.app">
+            </div>
+            <button class="btn-config-save" onclick="window.saveConfig()">儲存並連線</button>
+        </div>
+    `;
+}
+
+window.saveConfig = () => {
+    const cfg = {
+        apiKey: document.getElementById('cfg-apiKey').value.trim(),
+        projectId: document.getElementById('cfg-projectId').value.trim(),
+        databaseURL: document.getElementById('cfg-databaseURL').value.trim(),
+    };
+    if (!cfg.apiKey || !cfg.projectId || !cfg.databaseURL) { toast('請填寫所有欄位'); return; }
+    if (initFirebase(cfg)) {
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+        toast('連線成功');
+        setTimeout(startPublicView, 400);
+    } else {
+        toast('連線失敗，請確認設定');
+    }
+};
+
+// ── Entry ──────────────────────────────────────────────
+if (loadConfig()) {
+    startPublicView();
+} else {
+    renderConfig();
+}
+</script>
+</body>
+</html>
