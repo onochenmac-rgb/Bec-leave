@@ -6,21 +6,22 @@
     <title>休假看板</title>
     <style>
         :root {
-            --bg: #F5F5F7;
-            --surface: #FFFFFF;
+            --hv: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --sf: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            --bg: #EBEBEB;
             --text: #1D1D1F;
-            --text-secondary: #6E6E73;
+            --muted: #8E8E93;
+            --card-bg: rgba(255,255,255,0.52);
+            --card-border: rgba(255,255,255,0.88);
+            --line: rgba(0,0,0,0.2);
+            --line-inner: rgba(0,0,0,0.13);
             --accent: #0071E3;
-            --border: rgba(0,0,0,0.08);
-            --shadow: 0 2px 20px rgba(0,0,0,0.06);
-            --radius: 18px;
-            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: var(--font);
+            font-family: var(--hv);
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -30,106 +31,146 @@
         .container {
             max-width: 480px;
             margin: 0 auto;
-            padding: 0 20px 48px;
+            padding: 0 24px 60px;
         }
 
         /* ── Header ── */
         .header {
-            text-align: center;
-            padding: 56px 0 40px;
+            padding: 52px 0 32px;
+            margin-bottom: 20px;
             cursor: default;
             user-select: none;
         }
-        .header-name {
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .header-month {
-            font-size: 52px;
+        .header-brand {
+            font-family: var(--hv);
+            font-size: 12px;
             font-weight: 700;
-            letter-spacing: -0.03em;
-            line-height: 1;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 22px;
         }
-        .header-year {
-            font-size: 17px;
-            color: var(--text-secondary);
-            margin-top: 6px;
-        }
-
-        /* ── Summary ── */
-        .summary {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 18px 24px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
+        .header-line { height: 1px; background: var(--line); margin-bottom: 22px; }
+        .header-line-bottom { height: 1px; background: var(--line); margin-top: 22px; }
+        .header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .summary-label { font-size: 15px; color: var(--text-secondary); }
-        .summary-value { font-size: 24px; font-weight: 700; }
-        .summary-unit { font-size: 15px; font-weight: 400; color: var(--text-secondary); margin-left: 2px; }
-
-        /* ── Leave cards ── */
-        .leaves-list { display: flex; flex-direction: column; gap: 12px; }
-
-        .leave-card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 22px 24px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .leave-date-block { text-align: center; min-width: 60px; }
-        .leave-day {
-            font-size: 52px;
-            font-weight: 700;
+        .header-month {
+            font-family: var(--sf);
+            font-size: clamp(48px, 13vw, 60px);
+            font-weight: 800;
             letter-spacing: -0.04em;
             line-height: 1;
+            color: var(--text);
         }
-        .leave-weekday {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-top: 5px;
-        }
-        .leave-divider {
-            width: 1px;
-            height: 56px;
-            background: var(--border);
-            flex-shrink: 0;
-        }
-        .leave-info { flex: 1; }
-        .leave-type {
-            font-size: 22px;
-            font-weight: 600;
+        .header-right {
             display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+        .header-year {
+            font-family: var(--hv);
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: -0.01em;
+            color: var(--text);
+            line-height: 1;
+        }
+        .header-name {
+            font-family: var(--hv);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
+            line-height: 1;
+        }
+
+        /* ── Summary ── */
+        .summary {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
+            margin-bottom: 18px;
         }
-        .leave-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
+        .summary-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
         }
-        .leave-period { font-size: 15px; color: var(--text-secondary); }
+        .summary-value {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--text);
+        }
+
+        /* ── Leave cards ── */
+        .leaves-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .leave-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            padding: 28px 26px 22px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+        }
+        .leave-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .leave-day {
+            font-family: var(--hv);
+            font-size: clamp(68px, 18vw, 84px);
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            line-height: 0.82;
+            color: var(--text);
+        }
+        .leave-card-divider {
+            height: 1px;
+            background: var(--line-inner);
+            margin: 18px 0 14px;
+        }
+        .leave-card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .leave-meta {
+            font-family: var(--hv);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #3A3A3A;
+        }
+        .leave-period {
+            font-family: var(--hv);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--text);
+        }
 
         /* ── Empty state ── */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
-            color: var(--text-secondary);
+            color: var(--muted);
         }
-        .empty-icon { font-size: 56px; margin-bottom: 16px; }
-        .empty-text { font-size: 17px; }
+        .empty-text {
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
 
         /* ── PIN Overlay ── */
         .overlay {
@@ -423,8 +464,18 @@ import { getDatabase, ref, onValue, push, remove, get } from 'https://www.gstati
 const ADMIN_PASSWORD = '0000';
 const CONFIG_KEY = 'leave_board_config';
 const MONTHS_ZH = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+const WEEKDAYS_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const WEEKDAYS = ['日','一','二','三','四','五','六'];
-const TYPE_COLORS = { '特休': '#0071E3', '病假': '#FF3B30', '事假': '#FF9500', '補休': '#34C759', '婚假': '#AF52DE', '喪假': '#636366' };
+
+const TYPE_ICONS = {
+    '特休': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`,
+    '病假': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v8a6 6 0 1 0 6 0V5a3 3 0 0 0-3-3z"/><circle cx="12" cy="17" r="2" fill="#C7C7CC" stroke="none"/><line x1="12" y1="14.5" x2="12" y2="8"/></svg>`,
+    '事假': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    '補休': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>`,
+    '婚假': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+    '喪假': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 0 1 9 9c0 4-2.5 7.5-6 9l-3 1-3-1c-3.5-1.5-6-5-6-9a9 9 0 0 1 9-9z"/><path d="M12 7v5l3 3"/></svg>`,
+};
+const DEFAULT_ICON = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
 // ── State ──────────────────────────────────────────────
 let db = null;
@@ -439,7 +490,7 @@ function typeColor(type) { return TYPE_COLORS[type] || '#8E8E93'; }
 
 function parseDate(str) {
     const d = new Date(str + 'T00:00:00');
-    return { day: d.getDate(), weekday: WEEKDAYS[d.getDay()], month: d.getMonth() + 1, year: d.getFullYear() };
+    return { day: d.getDate(), weekday: WEEKDAYS[d.getDay()], weekdayEn: WEEKDAYS_EN[d.getDay()], month: d.getMonth() + 1, year: d.getFullYear() };
 }
 
 function toast(msg) {
@@ -562,33 +613,39 @@ function renderPublicUI(allLeaves) {
     let html = `
         <div class="container">
             <div class="header">
-                <div class="header-name">小野的休假</div>
-                <div class="header-month">${MONTHS_ZH[m - 1]}</div>
-                <div class="header-year">${y}</div>
+                <div class="header-brand">Brand Empowerment Center</div>
+                <div class="header-line"></div>
+                <div class="header-row">
+                    <div class="header-month">${MONTHS_ZH[m - 1]}</div>
+                    <div class="header-right">
+                        <div class="header-year">${y}</div>
+                        <div class="header-name">Ono's Attendance</div>
+                    </div>
+                </div>
+                <div class="header-line-bottom"></div>
             </div>
     `;
 
     if (entries.length > 0) {
         html += `
             <div class="summary">
-                <span class="summary-label">本月休假天數</span>
-                <span class="summary-value">${totalDays}<span class="summary-unit"> 天</span></span>
+                <span class="summary-label">Days Off This Month</span>
+                <span class="summary-value">${totalDays} Days</span>
             </div>
             <div class="leaves-list">
         `;
         for (const [, l] of entries) {
-            const { day, weekday } = parseDate(l.date);
+            const { day, weekdayEn } = parseDate(l.date);
+            const icon = TYPE_ICONS[l.type] || DEFAULT_ICON;
             html += `
                 <div class="leave-card">
-                    <div class="leave-date-block">
+                    <div class="leave-card-top">
                         <div class="leave-day">${day}</div>
-                        <div class="leave-weekday">週${weekday}</div>
+                        ${icon}
                     </div>
-                    <div class="leave-divider"></div>
-                    <div class="leave-info">
-                        <div class="leave-type">
-                            <span class="leave-dot" style="background:${typeColor(l.type)}"></span>${l.type}
-                        </div>
+                    <div class="leave-card-divider"></div>
+                    <div class="leave-card-bottom">
+                        <div class="leave-meta">${weekdayEn} · ${l.type}</div>
                         <div class="leave-period">${l.period}</div>
                     </div>
                 </div>
@@ -596,7 +653,7 @@ function renderPublicUI(allLeaves) {
         }
         html += `</div>`;
     } else {
-        html += `<div class="empty-state"><div class="empty-icon">🗓</div><div class="empty-text">本月無排定休假</div></div>`;
+        html += `<div class="empty-state"><div class="empty-text">本月無排定休假</div></div>`;
     }
 
     html += `</div>`;
