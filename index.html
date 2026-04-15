@@ -416,7 +416,7 @@
 <div id="app"></div>
 
 <script type="module">
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp, getApps, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref, onValue, push, remove, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 // ── Constants ──────────────────────────────────────────
@@ -450,10 +450,14 @@ function toast(msg) {
 }
 
 // ── Firebase ───────────────────────────────────────────
-function initFirebase(config) {
+async function initFirebase(config, force = false) {
     try {
         const existing = getApps().find(a => a.name === 'leave-board');
-        const app = existing || initializeApp(config, 'leave-board');
+        if (existing) {
+            if (force) await deleteApp(existing);
+            else { db = getDatabase(existing); return true; }
+        }
+        const app = initializeApp(config, 'leave-board');
         db = getDatabase(app);
         return true;
     } catch (e) {
@@ -462,13 +466,29 @@ function initFirebase(config) {
     }
 }
 
-function loadConfig() {
+async function loadConfig() {
     try {
         const raw = localStorage.getItem(CONFIG_KEY);
         if (!raw) return null;
         const cfg = JSON.parse(raw);
-        return initFirebase(cfg) ? cfg : null;
+        return await initFirebase(cfg) ? cfg : null;
     } catch (e) { return null; }
+}
+
+function parseFirebaseConfig(text) {
+    const extract = (key) => {
+        const m = text.match(new RegExp(key + '\\s*:\\s*["\']([^"\']+)["\']'));
+        return m ? m[1] : null;
+    };
+    return {
+        apiKey: extract('apiKey'),
+        projectId: extract('projectId'),
+        databaseURL: extract('databaseURL'),
+        authDomain: extract('authDomain'),
+        storageBucket: extract('storageBucket'),
+        messagingSenderId: extract('messagingSenderId'),
+        appId: extract('appId'),
+    };
 }
 
 // ── PIN ────────────────────────────────────────────────
@@ -712,30 +732,23 @@ function renderConfig() {
             <div class="config-divider"></div>
 
             <div class="config-input-group">
-                <label class="config-label">API Key</label>
-                <input class="config-input" id="cfg-apiKey" placeholder="AIzaSy...">
-            </div>
-            <div class="config-input-group">
-                <label class="config-label">Project ID</label>
-                <input class="config-input" id="cfg-projectId" placeholder="my-project-id">
-            </div>
-            <div class="config-input-group">
-                <label class="config-label">Database URL</label>
-                <input class="config-input" id="cfg-databaseURL" placeholder="https://my-project-default-rtdb...firebasedatabase.app">
+                <label class="config-label">將整段 firebaseConfig 貼入此處</label>
+                <textarea class="config-input" id="cfg-paste" rows="10" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIzaSy...&quot;,&#10;  databaseURL: &quot;https://...&quot;,&#10;  ...&#10;};" style="height:auto;padding:16px;line-height:1.5;font-size:13px;font-family:monospace;resize:none;"></textarea>
             </div>
             <button class="btn-config-save" onclick="window.saveConfig()">儲存並連線</button>
         </div>
     `;
 }
 
-window.saveConfig = () => {
-    const cfg = {
-        apiKey: document.getElementById('cfg-apiKey').value.trim(),
-        projectId: document.getElementById('cfg-projectId').value.trim(),
-        databaseURL: document.getElementById('cfg-databaseURL').value.trim(),
-    };
-    if (!cfg.apiKey || !cfg.projectId || !cfg.databaseURL) { toast('請填寫所有欄位'); return; }
-    if (initFirebase(cfg)) {
+window.saveConfig = async () => {
+    const raw = document.getElementById('cfg-paste').value.trim();
+    if (!raw) { toast('請貼入 firebaseConfig 內容'); return; }
+    const cfg = parseFirebaseConfig(raw);
+    if (!cfg.apiKey || !cfg.databaseURL) {
+        toast('找不到 apiKey 或 databaseURL，請確認貼入完整內容');
+        return;
+    }
+    if (await initFirebase(cfg, true)) {
         localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
         toast('連線成功');
         setTimeout(startPublicView, 400);
@@ -745,11 +758,10 @@ window.saveConfig = () => {
 };
 
 // ── Entry ──────────────────────────────────────────────
-if (loadConfig()) {
-    startPublicView();
-} else {
-    renderConfig();
-}
+loadConfig().then(cfg => {
+    if (cfg) startPublicView();
+    else renderConfig();
+});
 </script>
 </body>
 </html>
